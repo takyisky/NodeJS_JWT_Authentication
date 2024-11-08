@@ -9,6 +9,11 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
+// Generate a token for password reset
+const generateResetToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // Token expires in 1 hour
+};
+
 const nodemailer = require("nodemailer");
 
 // Set up Nodemailer transporter
@@ -37,6 +42,31 @@ const sendVerificationEmail = async (user) => {
     console.log("Verification email sent:", info.response);
   } catch (error) {
     console.error("Failed to send verification email:", error);
+  }
+};
+
+// Request password reset
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetToken = generateResetToken(user._id);
+    const resetLink = `http://localhost:5000/api/auth/reset-password?token=${resetToken}`;
+
+    const mailOptions = {
+      from: `"Your App Name" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Password Reset",
+      html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link will expire in 1 hour.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: "Password reset email sent" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -114,5 +144,28 @@ exports.verifyEmail = async (req, res) => {
     res.status(200).json({ message: "Email verified successfully" });
   } catch (error) {
     res.status(500).json({ message: "Invalid or expired token", error });
+  }
+};
+
+// Reset password
+exports.resetPassword = async (req, res) => {
+  const { token } = req.query; // Get token from query parameters
+  const { newPassword } = req.body;
+
+  try {
+    // Verify the reset token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Hash the new password and save it
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    res.status(400).json({ message: "Invalid or expired token", error });
   }
 };
