@@ -13,7 +13,7 @@ const nodemailer = require("nodemailer");
 
 // Set up Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail", // or another SMTP provider
+  service: "gmail", // SMTP provider
   auth: {
     user: process.env.EMAIL_USER, // e.g., your Gmail account
     pass: process.env.EMAIL_PASS, // app password for Gmail or API key for other services
@@ -26,7 +26,7 @@ const sendVerificationEmail = async (user) => {
   const verificationLink = `http://localhost:5000/api/auth/verify-email?token=${token}`;
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Emmanuel Takyi Obodai" <${process.env.EMAIL_USER}>`,
     to: user.email,
     subject: "Email Verification",
     html: `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`,

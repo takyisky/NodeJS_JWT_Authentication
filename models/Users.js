@@ -1,6 +1,6 @@
 // models/User.js
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 // Define the User schema
 const userSchema = new mongoose.Schema({
@@ -23,8 +23,8 @@ const userSchema = new mongoose.Schema({
 });
 
 // Password hashing before saving to database
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
   // Generate salt and hash password
   const salt = await bcrypt.genSalt(10);
@@ -38,4 +38,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 // Compile and export the User model
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);
